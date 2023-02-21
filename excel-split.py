@@ -4,27 +4,28 @@ import openpyxl
 workbook = openpyxl.load_workbook('original_file.xlsx')
 sheet = workbook.active
 
-# Get the data from the sheet and create a list of dictionaries
+# Get the data from the sheet and create a list of tuples
 data = []
 for row in sheet.iter_rows(min_row=2, values_only=True):
     name, age, nationality, sex = row
     age = age.split(',') if isinstance(age, str) else ['']
-    data.append({
-        'Name': name,
-        'Age': age,
-        'Nationality': nationality.split(','),
-        'Sex': sex.split(',')
-    })
+    nationality = nationality.split(',') if isinstance(nationality, str) else ['']
+    sex = sex.split(',') if isinstance(sex, str) else ['']
+    max_len = max(len(age), len(nationality), len(sex))
+    age += [''] * (max_len - len(age))
+    nationality += [''] * (max_len - len(nationality))
+    sex += [''] * (max_len - len(sex))
+    data.append(tuple(zip(name.split(','), age, nationality, sex)))
 
 # Explode the data into a list of dictionaries
 exploded_data = []
 for item in data:
-    for i in range(len(item['Name'])):
+    for i in range(len(item[0])):
         exploded_data.append({
-            'Name': item['Name'][i],
-            'Age': item['Age'][i] if i < len(item['Age']) else '',
-            'Nationality': item['Nationality'][i] if i < len(item['Nationality']) else '',
-            'Sex': item['Sex'][i] if i < len(item['Sex']) else ''
+            'Name': item[0][i].strip(),
+            'Age': item[1][i].strip(),
+            'Nationality': item[2][i].strip(),
+            'Sex': item[3][i].strip()
         })
 
 # Write the exploded data to a new sheet
