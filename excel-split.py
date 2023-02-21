@@ -21,12 +21,14 @@ for row in sheet.iter_rows(min_row=2, values_only=True):
 exploded_data = []
 for item in data:
     for i in range(len(item[0])):
-        exploded_data.append({
+        row = {
             'Name': item[0][i].strip(),
             'Age': item[1][i].strip(),
             'Nationality': item[2][i].strip(),
             'Sex': item[3][i].strip()
-        })
+        }
+        if all(row.values()):
+            exploded_data.append(row)
 
 # Write the exploded data to a new sheet
 new_workbook = openpyxl.Workbook()
