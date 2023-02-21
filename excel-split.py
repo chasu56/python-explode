@@ -1,27 +1,38 @@
-import pandas as pd
+import openpyxl
 
-# Load the original Excel sheet into a pandas DataFrame
-df = pd.read_excel('original_file.xlsx')
+# Load the original Excel file and sheet
+workbook = openpyxl.load_workbook('original_file.xlsx')
+sheet = workbook.active
 
-# Split the values in the "Name", "Age", "Nationality", and "Sex" columns
-df = df.assign(Name=df['Name'].str.split(', '), 
-               Age=df['Age'].str.split(',').apply(lambda x: [int(i) for i in x]), 
-               Nationality=df['Nationality'].str.split(', '), 
-               Sex=df['Sex'].str.split(','))
+# Get the data from the sheet and create a list of dictionaries
+data = []
+for row in sheet.iter_rows(min_row=2, values_only=True):
+    name, age, nationality, sex = row
+    age = age.split(',') if isinstance(age, str) else ['']
+    data.append({
+        'Name': name,
+        'Age': age,
+        'Nationality': nationality.split(','),
+        'Sex': sex.split(',')
+    })
 
-# Explode the DataFrame on the "Name", "Age", "Nationality", and "Sex" columns
-df = df.explode(['Name', 'Age', 'Nationality', 'Sex'])
+# Explode the data into a list of dictionaries
+exploded_data = []
+for item in data:
+    for i in range(len(item['Name'])):
+        exploded_data.append({
+            'Name': item['Name'][i],
+            'Age': item['Age'][i] if i < len(item['Age']) else '',
+            'Nationality': item['Nationality'][i] if i < len(item['Nationality']) else '',
+            'Sex': item['Sex'][i] if i < len(item['Sex']) else ''
+        })
 
-# Reset the index of the DataFrame
-df = df.reset_index(drop=True)
+# Write the exploded data to a new sheet
+new_workbook = openpyxl.Workbook()
+new_sheet = new_workbook.active
+new_sheet.append(['Name', 'Age', 'Nationality', 'Sex'])
+for item in exploded_data:
+    new_sheet.append([item['Name'], item['Age'], item['Nationality'], item['Sex']])
 
-# Create a new DataFrame with the desired format
-new_df = pd.DataFrame({
-    'Name': df['Name'],
-    'Age': df['Age'],
-    'Nationality': df['Nationality'],
-    'Sex': df['Sex']
-})
-
-# Write the new DataFrame to a new Excel file
-new_df.to_excel('new_file.xlsx', index=False)
+# Save the new workbook to a new file
+new_workbook.save('new_file.xlsx')
